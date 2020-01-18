@@ -27,12 +27,7 @@ function start(route, handle){
 		//pathname을 가져와서 라우터로 넘김
 		var pathname = url.parse(req.url).pathname;
 		console.log("Request for " + pathname + " received.");
-		route(handle, pathname);
-		//res.writeHead(HTTP코드, 컨텐트)
-		res.writeHead(200, {"Content-Type": "text/plain"});
-		//res.write(무언가) -> HTTP 응답 body로 보냄
-		res.write("Hello World");
-		res.end();
+		route(handle, pathname, res);
 	}
 
 	//http.createServer(콜백 함수) -> 서버 객체를 리턴함
