@@ -3,34 +3,8 @@ const http = require("http");
 const fs = require("fs");
 const url = require("url");
 const qs = require("querystring");
-
-function templateHTML(title, list, body, control){
-	return `
-		<!doctype html>
-		<html>
-			<head>
-				<title>WEB1 - ${title}</title>
-				<meta charset="utf-8">
-			</head>
-			<body>
-				<h1><a href="/">WEB2</a></h1>
-				${list}
-				${control}
-				${body}
-			</body>
-		</html>
-	`;
-}
-
-function templateList(filelist){
-	var list = '<ul>';
-	for(var i = 0; i < filelist.length; i++){
-		list += `<li><a href="/?id=${filelist[i]}">${filelist[i]}</a></li>`
-	}
-	list += '</ul>';
-	
-	return list;
-}
+const template = require("./lib/template.js");
+const path = require("path");
 
 http.createServer((req, res) => {
 	var _url = req.url;
@@ -43,27 +17,32 @@ http.createServer((req, res) => {
 			fs.readdir('./data', (err, filelist) => {
 				var title = 'Welcome';
 				var desc = 'Hello Node.JS'
-				var list = templateList(filelist)
-				var template = templateHTML(title, list, 
+				var list = template.list(filelist)
+				var html = template.html(title, list, 
 					`<h2>${title}</h2>${desc}`, 
 					`<a href="/create">글쓰기</a>`
-					);
+				);
 				res.writeHead(200);
-				res.end(template);
+				res.end(html);
 			});
 		}
 		else {
-			fs.readFile(`./data/${queryData.id}`, 'utf8', (err, desc) => {
+			var filteredId = path.parse(queryData.id).base;
+			fs.readFile(`./data/${filteredId}`, 'utf8', (err, desc) => {
 				fs.readdir('./data', (err, filelist) => {
 					var title = queryData.id
-					var list = templateList(filelist)
-					var template = templateHTML(title, list, 
+					var list = template.list(filelist)
+					var html = template.html(title, list, 
 						`<h2>${title}</h2>${desc}`, 
 						`<a href="/create">글쓰기</a>
-						<a href="/update?id=${title}">수정</a>`
+						<a href="/update?id=${title}">수정</a>
+						<form action="/delete_process" method="post">
+							<input type="hidden" name="id" value="${title}">
+							<input type="submit" value="delete">
+						</form>`
 					);
 					res.writeHead(200);
-					res.end(template);
+					res.end(html);
 				});
 			});
 		}
@@ -71,8 +50,8 @@ http.createServer((req, res) => {
 	else if(pathname == '/create'){
 		fs.readdir('./data', (err, filelist) => {
 			var title = 'WEB - create';
-			var list = templateList(filelist)
-			var template = templateHTML(title, list, `
+			var list = template.list(filelist);
+			var html = template.html(title, list, `
 				<form action="/create_process" method="POST">
 					<p><input type="text" name="title" placeholder="제목"></p>
 					<p>
@@ -84,7 +63,7 @@ http.createServer((req, res) => {
 				</form>
 			`, ``);
 			res.writeHead(200);
-			res.end(template);
+			res.end(html);
 		});
 	}
 	else if(pathname === '/create_process'){
@@ -107,11 +86,12 @@ http.createServer((req, res) => {
 		})
 	}
 	else if(pathname === `/update`){
-		fs.readFile(`./data/${queryData.id}`, 'utf8', (err, desc) => {
+		var filteredId = path.parse(queryData.id).base;
+		fs.readFile(`./data/${filteredId}`, 'utf8', (err, desc) => {
 			fs.readdir('./data', (err, filelist) => {
 				var title = queryData.id
-				var list = templateList(filelist)
-				var template = templateHTML(title, list, 
+				var list = template.list(filelist)
+				var html = template.html(title, list, 
 					`<form action="/update_process" method="POST">
 						<input type="hidden" name="id" value="${title}">
 						<p><input type="text" name="title" placeholder="제목" value="${title}"></p>
@@ -125,7 +105,7 @@ http.createServer((req, res) => {
 					`<a href="/create">글쓰기</a>`
 				);
 				res.writeHead(200);
-				res.end(template);
+				res.end(html);
 			});
 		});
 	}
@@ -147,6 +127,22 @@ http.createServer((req, res) => {
 				});
 			});
 		})
+	}
+	else if(pathname === '/delete_process'){
+		var body = '';
+		req.on('data', (data) => {
+			body += data;
+		});
+		req.on('end', () => {
+			var post = qs.parse(body);
+			var id = post.id;
+			var filteredId = path.parse(post.id).base;
+			fs.unlink(`./data/${filteredId}`, (err) => {
+				if (err) throw err;
+				res.writeHead(302, {Location: `/`});
+				res.end();
+			});
+		});
 	}
 	else{
 		res.writeHead(404);
