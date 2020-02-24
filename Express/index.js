@@ -4,6 +4,9 @@ const fs = require("fs");
 const qs = require("querystring");
 const path = require("path");
 const template = require("./lib/template.js");
+const bodyParser = require("body-parser")
+
+app.use(bodyParser.urlencoded({ extended: false }));
 
 app.get('/', (req, res) => {
 	fs.readdir('./data', (err, filelist) => {
@@ -57,23 +60,17 @@ app.get('/create', (req, res) => {
 });
 
 app.post('/create', (req, res) => {
-	var body = '';
-	req.on('data', (data) => {
-		body += data;		
+	var post = req.body;
+	var title = post.title;
+	var desc = post.desc;
+
+	fs.writeFile(`./data/${title}`, desc, 'utf8', (err) => {
+		res.writeHead(302, {Location: `/?id=${title}`});
+		res.end();
+
+		if (err) throw error;
 	});
-	req.on('end', () => {
-		var post = qs.parse(body);
-		var title = post.title;
-		var desc = post.desc;
-
-		fs.writeFile(`./data/${title}`, desc, 'utf8', (err) => {
-			res.writeHead(302, {Location: `/?id=${title}`});
-			res.end();
-
-			if (err) throw error;
-		});
-		console.log(post);
-	})
+	console.log(post);
 });
 
 app.get('/update/:updateId', (req, res) => {
@@ -102,37 +99,25 @@ app.get('/update/:updateId', (req, res) => {
 });
 
 app.post('/update', (req, res) => {
-	var body = '';
-	req.on('data', (data) => {
-		body += data;	
-	});
-	req.on('end', () => {
-		var post = qs.parse(body);
-		var id = post.id;
-		var title = post.title;
-		var desc = post.desc;
+	var post = req.body;
+	var id = post.id;
+	var title = post.title;
+	var desc = post.desc;
 
-		fs.rename(`./data/${id}`, `./data/${title}`, (err) => {
-			fs.writeFile(`./data/${title}`, desc, 'utf8', (err) => {
-				res.redirect(`/page/${title}`)				
-			});
+	fs.rename(`./data/${id}`, `./data/${title}`, (err) => {
+		fs.writeFile(`./data/${title}`, desc, 'utf8', (err) => {
+			res.redirect(`/page/${title}`)				
 		});
 	});
 });
 
 app.post('/delete', (req, res) => {
-	var body = '';
-	req.on('data', (data) => {
-		body += data;		
-	});
-	req.on('end', () => {
-		var post = qs.parse(body);
-		var id = post.id;
-		var filteredId = path.parse(post.id).base;
-		fs.unlink(`./data/${filteredId}`, (err) => {
-			if (err) throw err;
-			res.redirect('/');
-		});
+	var post = req.body;
+	var id = post.id;
+	var filteredId = path.parse(post.id).base;
+	fs.unlink(`./data/${filteredId}`, (err) => {
+		if (err) throw err;
+		res.redirect('/');
 	});
 });
 
