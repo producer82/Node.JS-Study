@@ -1,14 +1,17 @@
-const fs = require("fs");
+var fs = require('fs');
 
+/*
 //readFileSync
-// console.log('A');
-// var result = fs.readFileSync('E:/인생/개발/Node.JS-Study/WebApp/syntax/sample.txt', 'utf8');
-// console.log(result);
-// console.log('C');
-
-//readFile
 console.log('A');
-fs.readFile('E:/인생/개발/Node.JS-Study/WebApp/syntax/sample.txt', 'utf8', (err, data) => {
-    console.log(data);
+var result = fs.readFileSync('syntax/sample.txt', 'utf8');
+console.log(result);
+console.log('C');
+*/
+
+
+console.log('A');
+
+fs.readFile('syntax/sample.txt', 'utf8', function(err, result){
+    console.log(result);
 });
 console.log('C');
