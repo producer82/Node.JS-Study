@@ -5,6 +5,13 @@ var qs = require('querystring');
 var template = require('./lib/template.js');
 var path = require('path');
 var sanitizeHtml = require('sanitize-html');
+const mysql = require('mysql');
+const connection = mysql.createConnection({
+  host = 'localhost',
+  user = 'root',
+  password = 'root', 
+  database = 'opentutorials'
+}); 
 
 var app = http.createServer(function(request,response){
     var _url = request.url;
